@@ -1,12 +1,13 @@
 import datetime
 import logging
 import re
+from typing import cast
 
 import bs4
 import pydantic
 import requests
 from feedgen.feed import FeedGenerator
-from flask import Flask
+from flask import Flask, abort
 
 LOG = logging.getLogger()
 
@@ -33,7 +34,7 @@ class Item(pydantic.BaseModel):
     description: str
     number: str
     callsign: str
-    date: datetime.datetime | str
+    date_posted: datetime.datetime | str
 
     @pydantic.field_validator("date", mode="before")
     @classmethod
@@ -76,23 +77,26 @@ class QTH:
         items: list[Item] = []
 
         for item in ilist:
-            title = item.text.strip()
-            cat, title = title.split(" - ", 1)
+            title = cast(str, item.text).strip()
+            _, title = title.split(" - ", 1)
             data = item.next_sibling
             if data:
-                mo = re_listing.match(data.text.strip())
+                mo = re_listing.match(cast(str, data.text).strip())
                 if mo:
                     items.append(Item(title=title, **mo.groupdict()))
 
         return items
+
+    def get_items_from_page(self, n: int) -> list[Item]:
+        content = self.get_page(n)
+        return self.extract_items(content)
 
     def get_items(self):
         pageno = 1
         items: list[Item] = []
 
         while pageno <= self.max_pages:
-            content = self.get_page(pageno)
-            page_items = self.extract_items(content)
+            page_items = self.get_items_from_page(pageno)
             items.extend(page_items)
             pageno += 1
 
@@ -119,7 +123,9 @@ def build_feed(items: list[Item]) -> FeedGenerator:
 
 
 @app.route("/rss.xml")
-def rss():
+def rss() -> str:
+    if feed is None:
+        abort(404)
     return feed.rss_str()
 
 
