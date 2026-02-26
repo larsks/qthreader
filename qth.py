@@ -103,6 +103,7 @@ class QTH:
             except ValueError:
                 pass
 
+            title = title.strip()
             data = item.next_sibling
             if data:
                 mo = re_listing.match(cast(str, data.text).strip())
@@ -130,19 +131,8 @@ class QTH:
     def update(self) -> None:
         pageno = 1
 
-        try:
-            while pageno <= self.max_pages:
-                self.process_page(pageno)
-                pageno += 1
-                if self.ratelimit:
-                    self.ratelimit()
-        except storage.IntegrityError as err:
-            LOG.warning("stopped processing due to duplicate item")
-            pass
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level="INFO")
-    s = storage.FakeStorage()
-    q = QTH(s, max_pages=6)
-    q.update()
+        while pageno <= self.max_pages:
+            self.process_page(pageno)
+            pageno += 1
+            if self.ratelimit:
+                self.ratelimit()
