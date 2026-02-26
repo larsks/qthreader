@@ -59,7 +59,7 @@ class SqliteStorage:
 
     def items(self):
         with self.session() as session:
-            statement = sqlmodel.select(Item)
+            statement = sqlmodel.select(Item).order_by(Item.date_added)
             res = session.exec(statement)
             for item in res.fetchall():
                 yield item
