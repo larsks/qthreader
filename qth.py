@@ -98,8 +98,9 @@ class QTH:
             # The "all listings" page prefixes the title with the category. We handle both cases
             # here so that the code works with both per-category links as well as with
             # /all.php.
+            category: str | None = None
             try:
-                _, title = title.split(" - ", 1)
+                category, title = title.split(" - ", 1)
             except ValueError:
                 pass
 
@@ -110,6 +111,8 @@ class QTH:
                 if mo:
                     meta = additional_meta if additional_meta else {}
                     meta["callsign"] = mo.group("callsign")
+                    if category:
+                        meta["category"] = category
                     item = Item(
                         link=self.make_link(mo.group("id")),
                         title=title,
@@ -121,8 +124,6 @@ class QTH:
                     self.store.add(storage.Item.model_validate(item.model_dump()))
                 else:
                     LOG.error("failed to parse listing from %s", item)
-                    breakpoint()
-                    pass
 
     def process_page(self, n: int) -> None:
         content = self.get_page(n)
