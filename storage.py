@@ -57,6 +57,13 @@ class SqliteStorage:
         with sqlmodel.Session(self.engine) as session:
             yield session
 
+    def items(self):
+        with self.session() as session:
+            statement = sqlmodel.select(Item)
+            res = session.exec(statement)
+            for item in res.fetchall():
+                yield item
+
     def add(self, item: Item):
         try:
             with self.session() as session:
