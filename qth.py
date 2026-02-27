@@ -59,7 +59,7 @@ class Item(pydantic.BaseModel):
 
 class QTH:
     url: str = "https://swap.qth.com/all.php"
-    max_pages: int = 5
+    max_pages: int = 50
     store: storage.Storage
     ratelimit: Callable[[], None] | None
     name: str = "qth"
