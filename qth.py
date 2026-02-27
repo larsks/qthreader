@@ -109,6 +109,8 @@ class QTH:
 
             title = title.strip()
             data = item.next_sibling
+            for br in data.select("br"):
+                br.replace_with("\n")
             if data:
                 mo = re_listing.match(cast(str, data.text).strip())
                 if mo:
@@ -125,6 +127,7 @@ class QTH:
                         date_modified=mo.group("date_modified"),
                         meta=meta,
                     )
+
                     self.store.add(storage.Item.model_validate(item.model_dump()))
                 else:
                     LOG.error("failed to parse listing from %s", item)
