@@ -1,3 +1,5 @@
+# pyright: reportUnusedCallResult=false
+import argparse
 import logging
 import random
 import time
@@ -8,6 +10,11 @@ import storage
 
 LOG = logging.getLogger(__name__)
 
+sources = {
+    "qth": qth.QTH,
+    "mtc": mtc.MTC,
+}
+
 
 def ratelimit():
     delay = random.randint(10, 180)
@@ -15,15 +22,40 @@ def ratelimit():
     time.sleep(delay)
 
 
-logging.basicConfig(level="INFO")
-store = storage.SqliteStorage("items.db")
-qth_src = qth.QTH(store, ratelimit=ratelimit)
-mtc_src = mtc.MTC(store, ratelimit=ratelimit)
+def parse_args():
+    p = argparse.ArgumentParser()
 
-for src in [qth_src, mtc_src]:
-    with store:
-        try:
-            new = src.update()
-        except Exception as err:
-            LOG.warning("stopped processing %s due to error: %s", src.name, err)
-        LOG.info(f"found {store.counter} new items")
+    p.add_argument(
+        "--sources",
+        "-s",
+        help="Comma separated list of sources",
+        type=lambda x: x.split(","),
+        default=",".join(sources.keys()),
+    )
+
+    return p.parse_args()
+
+
+def main():
+    logging.basicConfig(level="INFO")
+
+    args = parse_args()
+
+    store = storage.SqliteStorage("items.db")
+
+    for srcname in args.sources:
+        src = sources[srcname](store, ratelimit=ratelimit)
+        LOG.info("fetching from %s", srcname)
+        with store:
+            try:
+                src.update()
+            except Exception as err:
+                LOG.warning("stopped processing %s due to error: %s", src.name, err)
+            LOG.info(f"found {store.counter} new items")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
