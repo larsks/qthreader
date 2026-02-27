@@ -22,7 +22,7 @@ def rss_xml():
     for item in store.items():
         entry = feed.add_entry()
         entry.guid(item.link)
-        entry.title(item.title)
+        entry.title(f"[{item.source}] {item.title}")
         entry.link(href=item.link)
 
         mdtable = [["source", item.source]] + [[k, v] for k, v in item.meta.items()]
