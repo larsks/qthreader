@@ -6,6 +6,7 @@ import time
 
 import mtc
 import qth
+import rle
 import storage
 
 LOG = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ LOG = logging.getLogger(__name__)
 sources = {
     "qth": qth.QTH,
     "mtc": mtc.MTC,
+    "rle": rle.RLE,
 }
 
 
