@@ -18,25 +18,16 @@ class IntegrityError(StorageError):
 
 class Item(sqlmodel.SQLModel, table=True):
     link: str = sqlmodel.Field(primary_key=True)
+    id: str | None = None
+    source: str
     title: str
-    description: str
-    date_posted: datetime.datetime
+    description: str | None = None
+    date_posted: datetime.datetime | None = None
     date_modified: datetime.datetime | None = None
     date_added: datetime.datetime = sqlmodel.Field(
         default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
     )
     meta: dict[str, str] = sqlmodel.Field(default={}, sa_type=sqlmodel.JSON)
-
-    @pydantic.field_validator("date_posted", mode="before")
-    @classmethod
-    def validate_date(cls, val: str | datetime.datetime) -> datetime.datetime:
-        if type(val) is str:
-            dtval = datetime.datetime.strptime(val, "%m/%d/%y")
-            return dtval
-        elif type(val) is datetime.datetime:
-            return val
-        else:
-            raise ValueError(val)
 
 
 class Storage(Protocol):

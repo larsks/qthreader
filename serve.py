@@ -1,6 +1,7 @@
 import datetime
 
 import flask
+import tabulate
 from feedgen.feed import FeedGenerator
 
 import storage
@@ -13,10 +14,9 @@ def rss_xml():
     store = storage.SqliteStorage("items.db")
     feed = FeedGenerator()
 
-    feed.id("https://swap.qth.com/")
-    feed.title("QTH Swap Meet")
-    feed.description("QTH Swap Meet")
-    feed.link(href="https://swap.qth.com/", rel="alternate")
+    feed.id("swapmeet")
+    feed.title("Amateur Radio Swap Meet")
+    feed.description("Amateur Radio Swap Meet")
     feed.link(href="http://localhost:8082/rss.xml", rel="self")
 
     for item in store.items():
@@ -24,8 +24,19 @@ def rss_xml():
         entry.guid(item.link)
         entry.title(item.title)
         entry.link(href=item.link)
-        entry.description(item.description)
-        entry.published(item.date_posted.astimezone(datetime.timezone.utc))
+
+        mdtable = [["source", item.source]] + [[k, v] for k, v in item.meta.items()]
+        entry.description(
+            (item.description if item.description else "")
+            + "\n\n"
+            + tabulate.tabulate(mdtable)
+        )
+
+        # Some sources provide a posted date, some do not.
+        if item.date_posted:
+            entry.published(item.date_posted.astimezone(datetime.timezone.utc))
+        else:
+            entry.published(item.date_added.astimezone(datetime.timezone.utc))
 
     return feed.rss_str()
 

@@ -1,7 +1,7 @@
 import datetime
 import logging
 import re
-from typing import Callable, cast
+from typing import Callable, Literal, cast
 
 import bs4
 import pydantic
@@ -33,6 +33,8 @@ re_listing = re.compile(
 
 class Item(pydantic.BaseModel):
     link: str
+    id: str
+    source: Literal["qth"] = "qth"
     title: str
     description: str
     date_posted: datetime.datetime | str
@@ -60,6 +62,7 @@ class QTH:
     max_pages: int = 5
     store: storage.Storage
     ratelimit: Callable[[], None] | None
+    name: str = "qth"
 
     def __init__(
         self,
@@ -115,6 +118,7 @@ class QTH:
                         meta["category"] = category
                     item = Item(
                         link=self.make_link(mo.group("id")),
+                        id=mo.group("id"),
                         title=title,
                         description=mo.group("description"),
                         date_posted=mo.group("date_posted"),
