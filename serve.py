@@ -27,9 +27,11 @@ def rss_xml():
 
         mdtable = [["source", item.source]] + [[k, v] for k, v in item.meta.items()]
         entry.description(
-            (item.description if item.description else "")
+            "<pre>"
+            + (item.description if item.description else "")
             + "\n\n"
             + tabulate.tabulate(mdtable)
+            + "</pre>"
         )
 
         # Some sources provide a posted date, some do not.
