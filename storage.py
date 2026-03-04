@@ -1,6 +1,6 @@
 import datetime
 from contextlib import contextmanager
-from typing import Protocol
+from typing import Protocol, Self
 
 import pydantic
 import sqlalchemy
@@ -32,6 +32,9 @@ class Item(sqlmodel.SQLModel, table=True):
 
 class Storage(Protocol):
     def add(self, item: Item): ...
+    def getNewItemCount(self) -> int: ...
+    def __enter__(self) -> Self: ...
+    def __exit__(self, exc_type, exc_value, traceback): ...
 
 
 class SqliteStorage:
@@ -86,6 +89,9 @@ class SqliteStorage:
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
+
+    def getNewItemCount(self):
+        return self.counter
 
 
 class FakeStorage:
