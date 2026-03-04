@@ -35,6 +35,7 @@ class Item(pydantic.BaseModel):
             link=entry.link,
             id=entry.id,
             date_posted=datetime.datetime(*entry.published_parsed[:6]),
+            meta={"callsign": entry.author},
         )
 
 
