@@ -9,8 +9,11 @@ import storage
 app = flask.Flask(__name__)
 
 
-@app.get("/rss.xml")
-def rss_xml():
+def to_paragraphs(s: str) -> str:
+    return "\n".join(f"<p>{line}</p>" for line in s.split("\n\n"))
+
+
+def build_feed() -> FeedGenerator:
     store = storage.SqliteStorage("items.db")
     feed = FeedGenerator()
 
@@ -26,13 +29,17 @@ def rss_xml():
         entry.link(href=item.link)
 
         mdtable = [["source", item.source]] + [[k, v] for k, v in item.meta.items()]
-        entry.description(
-            "<pre>"
-            + (item.description if item.description else "")
-            + "\n\n"
-            + tabulate.tabulate(mdtable)
-            + "</pre>"
-        )
+        description = ""
+        if item.description:
+            description = to_paragraphs(item.description)
+        description += tabulate.tabulate(mdtable, tablefmt="html")
+
+        if callsign := item.meta.get("callsign"):
+            callsign_url = f"https://www.qrz.com/db/{callsign}"
+            entry.author(name=callsign, uri=callsign_url, email="invalid@example.com")
+            description += f'<p>Author: <a href="{callsign_url}">{callsign}</a></p>'
+
+        entry.content(description, type="html")
 
         # Some sources provide a posted date, some do not.
         if item.date_posted:
@@ -40,7 +47,19 @@ def rss_xml():
         else:
             entry.published(item.date_added.astimezone(datetime.timezone.utc))
 
+    return feed
+
+
+@app.get("/rss.xml")
+def rss_xml():
+    feed = build_feed()
     return feed.rss_str()
+
+
+@app.get("/atom.xml")
+def atom_xml():
+    feed = build_feed()
+    return feed.atom_str()
 
 
 if __name__ == "__main__":
