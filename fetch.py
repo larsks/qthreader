@@ -1,10 +1,12 @@
 # pyright: reportUnusedCallResult=false
 import argparse
 import logging
+import os
 import random
 import time
 
 import mtc
+import qrz
 import qth
 import rle
 import storage
@@ -13,6 +15,7 @@ LOG = logging.getLogger(__name__)
 
 sources = {
     "qth": qth.QTH,
+    "qrz": qrz.QRZ,
     "mtc": mtc.MTC,
     "rle": rle.RLE,
 }
@@ -43,7 +46,7 @@ def main():
 
     args = parse_args()
 
-    store = storage.SqliteStorage("items.db")
+    store = storage.SqliteStorage(os.getenv("STORAGE") or "items.db")
 
     for srcname in args.sources:
         src = sources[srcname](store, ratelimit=ratelimit)
