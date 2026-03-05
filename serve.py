@@ -48,6 +48,11 @@ def build_feed() -> FeedGenerator:
         else:
             entry.published(item.date_added.astimezone(datetime.timezone.utc))
 
+        if item.date_modified:
+            entry.updated(item.date_modified.astimezone(datetime.timezone.utc))
+        elif item.date_posted:
+            entry.updated(item.date_posted.astimezone(datetime.timezone.utc))
+
     return feed
 
 
