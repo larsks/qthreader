@@ -1,12 +1,14 @@
 # pyright: reportUnusedCallResult=false
 
 import argparse
+import datetime
 import logging
 import random
 import time
 from typing import Callable, Protocol
 
 import schedule
+from sqlmodel import select
 
 import mtc
 import qrz
@@ -15,12 +17,6 @@ import rle
 import storage
 
 LOG = logging.getLogger(__name__)
-
-sources = {
-    "qth": qth.QTH,
-    "mtc": mtc.MTC,
-    "rle": rle.RLE,
-}
 
 
 class Driver(Protocol):
@@ -88,6 +84,19 @@ def schedule_with_jitter(func, interval: int, jitter: float = 0.5):
     schedule.every(low).to(high).minutes.do(func)
 
 
+def cleanup_job(store: storage.Storage):
+    def job():
+        LOG.info("expiring older items")
+        with store.session() as session:
+            cutoff = datetime.datetime.now() - datetime.timedelta(days=14)
+            statement = select(storage.Item).where(storage.Item.date_added < cutoff)
+            res = session.exec(statement)
+            for item in res.fetchall():
+                session.delete(item)
+
+    return job
+
+
 def main():
     args = parse_args()
     intervals: dict[str, int] = dict(args.interval)
@@ -95,7 +104,7 @@ def main():
     store = storage.SqliteStorage("items.db")
 
     drivers: dict[str, tuple[Driver, int]] = {
-        "qth": (qth.QTH(store, ratelimit=ratelimit), 60),
+        "qth": (qth.QTH(store, ratelimit=ratelimit), 120),
         "mtc": (mtc.MTC(store, ratelimit=ratelimit), 720),
         "rle": (rle.RLE(store, ratelimit=ratelimit), 720),
         "qrz": (qrz.QRZ(store, ratelimit=ratelimit), 60),
@@ -108,6 +117,7 @@ def main():
                 intervals.get(name, default_interval),
                 jitter=args.jitter,
             )
+    schedule.every(1).day.do(cleanup_job(store))
 
     if args.immediately:
         for name, (driver, default_interval) in drivers.items():
@@ -117,7 +127,8 @@ def main():
     while True:
         idle = schedule.idle_seconds()
         if idle is not None and loopcount % 300 == 0:
-            LOG.info("%d seconds until next job runs", idle)
+            delta = datetime.timedelta(seconds=idle - (idle % 60))
+            LOG.info("%s until next job runs", delta)
         schedule.run_pending()
         loopcount += 1
         time.sleep(1)
