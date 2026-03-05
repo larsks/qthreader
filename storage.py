@@ -1,6 +1,8 @@
 import datetime
+from collections.abc import Generator
+from contextlib import AbstractContextManager as ContextManager
 from contextlib import contextmanager
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 
 import pydantic
 import sqlalchemy
@@ -33,6 +35,7 @@ class Item(sqlmodel.SQLModel, table=True):
 class Storage(Protocol):
     def add(self, item: Item): ...
     def getNewItemCount(self) -> int: ...
+    def session(self) -> ContextManager[sqlmodel.Session]: ...
     def __enter__(self) -> Self: ...
     def __exit__(self, exc_type, exc_value, traceback): ...
 
@@ -47,7 +50,7 @@ class SqliteStorage:
         Item.metadata.create_all(self.engine)
 
     @contextmanager
-    def session(self):
+    def session(self) -> Generator[sqlmodel.Session, Any, None]:
         with sqlmodel.Session(self.engine) as session:
             yield session
 
