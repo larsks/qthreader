@@ -124,15 +124,16 @@ def main():
         for name, (driver, default_interval) in drivers.items():
             wrap_update(name, store, driver.update)()
 
-    loopcount = 0
     while True:
-        idle = schedule.idle_seconds()
-        if idle is not None and loopcount % 300 == 0:
-            delta = datetime.timedelta(seconds=idle - (idle % 60))
-            LOG.info("%s until next job runs", delta)
+        idle_seconds = schedule.idle_seconds()
+        if idle_seconds is None:
+            LOG.warning("no pending jobs")
+            break
+
+        delta = datetime.timedelta(seconds=idle_seconds - (idle_seconds % 60))
+        LOG.info("%s until next job runs", delta)
+        time.sleep(idle_seconds)
         schedule.run_pending()
-        loopcount += 1
-        time.sleep(1)
 
 
 if __name__ == "__main__":
