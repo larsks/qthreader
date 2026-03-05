@@ -40,12 +40,12 @@ class Storage(Protocol):
     def __exit__(self, exc_type, exc_value, traceback): ...
 
 
-class SqliteStorage:
+class SqlStorage:
     engine: sqlalchemy.engine.Engine
     counter: int
 
-    def __init__(self, filename: str):
-        self.engine = sqlmodel.create_engine(f"sqlite:///{filename}")
+    def __init__(self, url: str):
+        self.engine = sqlmodel.create_engine(url)
         self.counter = 0
         Item.metadata.create_all(self.engine)
 

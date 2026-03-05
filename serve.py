@@ -5,6 +5,7 @@ import tabulate
 from feedgen.feed import FeedGenerator
 
 import storage
+from settings import settings
 
 app = flask.Flask(__name__)
 
@@ -14,7 +15,7 @@ def to_paragraphs(s: str) -> str:
 
 
 def build_feed() -> FeedGenerator:
-    store = storage.SqliteStorage("items.db")
+    store = storage.SqlStorage(settings.database_url)
     feed = FeedGenerator()
 
     feed.id("swapmeet")

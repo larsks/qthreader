@@ -15,6 +15,7 @@ import qrz
 import qth
 import rle
 import storage
+from settings import settings
 
 LOG = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ def main():
     args = parse_args()
     intervals: dict[str, int] = dict(args.interval)
     logging.basicConfig(level="INFO")
-    store = storage.SqliteStorage("items.db")
+    store = storage.SqlStorage(settings.database_url)
 
     drivers: dict[str, tuple[Driver, int]] = {
         "qth": (qth.QTH(store, ratelimit=ratelimit), 120),

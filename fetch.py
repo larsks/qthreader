@@ -10,6 +10,7 @@ import qrz
 import qth
 import rle
 import storage
+from settings import settings
 
 LOG = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def main():
 
     args = parse_args()
 
-    store = storage.SqliteStorage(os.getenv("STORAGE") or "items.db")
+    store = storage.SqlStorage(settings.database_url)
 
     for srcname in args.sources:
         src = sources[srcname](store, ratelimit=ratelimit)
