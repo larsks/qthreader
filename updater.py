@@ -131,7 +131,10 @@ def main():
             break
 
         delta = datetime.timedelta(seconds=idle_seconds - (idle_seconds % 60))
-        LOG.info("%s until next job runs", delta)
+        nextrun = datetime.datetime.now() + delta
+        LOG.info(
+            "%s until next job runs (%s)", delta, nextrun.time().strftime("%H:%M:%S")
+        )
         time.sleep(idle_seconds)
         schedule.run_pending()
 
